@@ -1,7 +1,13 @@
-# Vue 3 + Vite
+# Face and Plate Rekognition
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Mainy using AWS:
+- AWS Lambda
+- AWS Rekognition
+- AWS S3
+- AWS API Gateway
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+Flow :
+1. Input base64 image converted into binary to be passed as parameter to --> API Gateway to perfrom detectFaces() and getting Bounding box as response
+2. If detectFaces is true, then :
+a. the image will be stored in S3 (done)
+b. Perform searchFacesByImage(). If no faceMatches then perform indexFaces()
