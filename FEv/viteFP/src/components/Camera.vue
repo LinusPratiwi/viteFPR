@@ -88,6 +88,7 @@ const stopCamera = async () => {
     context2.lineWidth = 3;
     context2.strokeStyle = 'green';
     context2.stroke();
+    // setTimeout(stopCamera, 100);
     console.log("boundingbox : ",x,y,width,height)
     
    tracks.forEach(element => {
