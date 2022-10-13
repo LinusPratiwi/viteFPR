@@ -10,15 +10,15 @@
                     <span class="sr-only">Use setting</span>
                     <span aria-hidden="true" :class="enabled ? 'translate-x-9' : 'translate-x-0'"
                         class="pointer-events-none inline-block h-[34px] w-[34px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" />
-                </Switch>
+                    <!-- click -->
+                    </Switch>
                 <!-- end toggle -->
                 
                 <!-- camera -->
                 <div  >
                     <video :srcObject="camera" ref="camera"  autoplay ></video>
-                    
-                    <canvas ref="canvas"></canvas>
-                    <canvas id="canvas#"></canvas>
+                    <!-- <canvas ref="canvas" style=" position:absolute; height:480px;width:640px"></canvas> -->
+                   
                 </div>
                 <!-- <div v-else-if="!enabled">
                     <h1></h1>
@@ -35,12 +35,16 @@
 import { ref,onMounted,onBeforeMount,onBeforeUnmount,watch  } from 'vue'
 import { Switch } from '@headlessui/vue'
 import * as tf from '@tensorflow/tfjs'
-import { Buffer } from "buffer/";
+// import { Buffer } from "buffer/";
+
 
 const enabled = ref(false) 
 const camera = ref(null )   
 const canvas = ref<HTMLCanvasElement | null>(null); 
 const picture = ref('')
+let context2
+let _plate_bbox
+const emit = defineEmits(["setExtId"])
 
 
 const constraints = (window.constraints = {
@@ -60,13 +64,14 @@ const stopCamera = async () => {
     let tracks =  document.querySelector('video').srcObject.getTracks()
     const vid = document.querySelector('video')
     const context = document.querySelector('canvas').getContext('2d')
-    const context2 = context
-    context.drawImage(vid, 40, 40, 115, 110)
+    context2 = context
+    context.drawImage(vid, 0, 0, 100, 115)
     
-    console.log("sf",enabled)
+    // console.log("sf",enabled)
     const pict = document.querySelector('canvas').toDataURL('image/jpg')
-    console.log(pict)
+    // console.log(pict)
     // const buf = new Buffer(pict.replace(/^data:image\/\w+;base64,/, ""),'base64')
+    
     
     let req = {
             base64: pict,
@@ -79,18 +84,22 @@ const stopCamera = async () => {
         },
         body:JSON.stringify(req)
     })
-
+    await runSSD()
+    // console.log("runssd-->",res)
     const data =await a.json()
-    console.log(data)
+    // console.log(data[2])
     const [x, y, width, height] = [data[1].Left, data[1].Top, data[1].Width, data[1].Height]; 
-    context2.beginPath()
-    context2.rect(`${x * 300}`, `${y * 150}`, `${width * 300}`, `${height * 150}`)
-    context2.lineWidth = 3;
-    context2.strokeStyle = 'green';
-    context2.stroke();
-    // setTimeout(stopCamera, 100);
-    console.log("boundingbox : ",x,y,width,height)
+    const bbox = [`${x * 300}`, `${y * 150}`, `${width * 300}`, `${height * 150}`]
+    console.log("plate det : ",data[2])
     
+    const canv_app = document.getElementById('canv_app').getContext('2d')
+    canv_app.drawImage(vid, 0, 0, 100, 115)
+
+    emit('setExtId',[pict,bbox])
+    // emit('setBbox',bbox)
+    // setTimeout(stopCamera, 100);
+    // console.log("bbox plate: ",_plate_bbox)
+    // console.log("return bbox : ", res)
    tracks.forEach(element => {
         // element.stop()
    });
@@ -122,23 +131,58 @@ onMounted(() => {
 	
 })
 
-const runSSD =  () => {
+const runSSD =  async() => {
     // 3. TODO - Load network 
-    const net =  tf.loadGraphModel('E:\KULIAH\PA\FE_LP\FEv\viteFP\model.json')
-    console.log(net)
-    // Loop and detect hands
-    // setInterval(() => {
-    //   detect(net);
-    // }, 16.7);
-  };
+    context2 = document.getElementById('plate_canv').getContext('2d')
+    const net =await tf.loadGraphModel('../../ssd_model/model.json')
+    console.log("SSD ** ",net)
 
-const takePhoto = ()=>{
-    const canvas = document.querySelector('canvas')
-    const context = canvas.getContext('2d')
-    const photoFromVideo = document.querySelector('video')
-    context.drawImage(photoFromVideo, 0, 0, 45, 37)
-} 
+    const vid = document.querySelector('video')
+    const img = tf.browser.fromPixels(vid)
+    const resized = tf.image.resizeBilinear(img,[640,480])
+    const casted = resized.cast('int32')
+    const expanded  = casted.expandDims(0)
+    const obj = await net.executeAsync(expanded)
 
+    const boxes = await obj[0].array()
+    const scores = await obj[3].array()
+    console.log("scores : ",scores)
+    requestAnimationFrame(() => { drawRect(boxes[0],  scores[0], 0.5, 300, 150, context2) }
+    )
+    const _box = boxes[0]
+    // let _maxconf = 0
+
+    tf.dispose(img)
+    tf.dispose(resized)
+    tf.dispose(casted)
+    tf.dispose(expanded)
+    tf.dispose(obj)
+    // return _plate_bbox
+}
+
+const drawRect = (boxes, scores, threshold, imgWidth, imgHeight, ctx) => {
+
+    for (let i = 0; i <= boxes.length; i++) {
+        if (boxes[i] && scores[i] > threshold) {
+            // Extract variables
+            const [y, x, height, width] = boxes[i]
+         
+
+            // Set styling
+            ctx.strokeStyle = 'red'
+            ctx.lineWidth = 3
+
+            // DRAW!!
+            ctx.clearRect(0, 0, 300, 150)
+            ctx.beginPath()
+            ctx.rect(x * imgWidth, y * imgHeight, width * imgWidth / 2, height * imgHeight / 2);
+            ctx.stroke()
+            // ctx.beginPath()
+            // ctx.rect(0,0,40,40)
+            // ctx.strokeStyle='green'
+        }
+    }
+}
 
 
 </script>

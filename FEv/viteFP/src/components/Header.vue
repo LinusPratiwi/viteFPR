@@ -8,14 +8,15 @@
         md:flex md:justify-between md:items-center
       ">
       <div class="flex items-center justify-between">
-        <router-link to="/" class="
+        <!-- <router-link to="/" class="
             text-xl
             font-bold
             text-gray-100
             md:text-2xl
             hover:text-indigo-400
-          ">Logo
-        </router-link>
+          ">Face-Plate-Rekognition
+        </router-link> -->
+        <!-- <h1 style="color:whitesmoke; font-weight: bold; font-size: large;">FacePlareRec</h1> -->
         <!-- Mobile menu button -->
         <div @click="toggleNav" class="flex md:hidden">
           <button type="button" class="
