@@ -1,15 +1,10 @@
 <template>
-  <Header />
-  <div class="grid grid-rows-2 grid-cols-5 gap-4 p-4">
-    <Camera @setExtId = "(data)=>{
-      extId=data[0]
-      bbox = data[1]
-    }"></Camera>
-    
-    <Card :extId="extId" :bbox="bbox"/>
-   
-  </div>  
-  <canvas ref="canvas" id="canv_app" style=" height:480px;width:640px"></canvas>
+ <div class="nav">
+  <router-link :to="{name : 'Entry' }" ></router-link>
+  <router-view />
+  <!-- <router-link :to="{na  me : 'Exit' }"> Exit Gate</router-link> -->
+ </div>
+
 </template>
 
 

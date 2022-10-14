@@ -3,19 +3,28 @@
     <nav class="
         container
         px-6
-        py-8
+        py-6
         mx-auto
         md:flex md:justify-between md:items-center
       ">
-      <div class="flex items-center justify-between">
-        <!-- <router-link to="/" class="
+      <div class="flex items-center justify-between" id="nav">
+        <router-link :to="{name : 'Entry'}" class="
             text-xl
             font-bold
             text-gray-100
             md:text-2xl
             hover:text-indigo-400
-          ">Face-Plate-Rekognition
-        </router-link> -->
+          ">Entry 
+        </router-link>
+        <router-link :to="{name : 'Exit'}" class="
+                    text-xl
+                    font-bold
+                    text-gray-100
+                    md:text-2xl
+                    hover:text-indigo-400
+                  ">Exit
+        </router-link>
+        <router-view/>
         <!-- <h1 style="color:whitesmoke; font-weight: bold; font-size: large;">FacePlareRec</h1> -->
         <!-- Mobile menu button -->
         <div @click="toggleNav" class="flex md:hidden">
@@ -40,9 +49,8 @@
           space-y-4
           md:flex md:space-y-0 md:flex-row md:items-center md:space-x-10 md:mt-0
         ">
-        <li class="text-gray-100 hover:text-indigo-400">Home</li>
-        <li class="text-gray-100 hover:text-indigo-400">About</li>
-        <li class="text-gray-100 hover:text-indigo-400">Blogs</li>
+        <!-- <router-link>Home</router-link><li class="text-gray-100 hover:text-indigo-400"></li> -->
+        <li class="text-gray-100 hover:text-indigo-400">Parking Records</li>
         <li class="text-gray-100 hover:text-indigo-400">Contact Us</li>
       </ul>
     </nav>
@@ -53,3 +61,19 @@
 <script setup>
 
 </script>
+
+<style scoped>
+#nav {
+  column-gap: 20px;
+  padding-left: 20px
+}
+
+
+#nav a.router-link-exact-active{
+  color : blue;
+  background : white;
+  border-radius: 4px;
+  padding : 4px;
+  
+}
+</style>
