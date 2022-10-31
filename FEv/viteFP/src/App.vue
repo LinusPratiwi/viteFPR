@@ -1,20 +1,17 @@
 <template>
- <div class="nav">
-  <router-link :to="{name : 'Entry' }" ></router-link>
-  <router-view />
-  <!-- <router-link :to="{na  me : 'Exit' }"> Exit Gate</router-link> -->
- </div>
+
+<Modal></Modal> 
+<router-view />
 
 </template>
 
 
 <script setup >
+import Modal from './components/Modal.vue'
 import Header from './components/Header.vue'
-import Card from './components/Cards.vue'
-import Camera from './components/Camera.vue'
 import { ref } from 'vue'
 
-const extId = ref(null)
+const gate = ref('')
 const bbox = ref(null)
 
 

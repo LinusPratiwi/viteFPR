@@ -8,23 +8,15 @@
         md:flex md:justify-between md:items-center
       ">
       <div class="flex items-center justify-between" id="nav">
-        <router-link :to="{name : 'Entry'}" class="
+        <p class="
             text-xl
             font-bold
             text-gray-100
             md:text-2xl
-            hover:text-indigo-400
-          ">Entry 
-        </router-link>
-        <router-link :to="{name : 'Exit'}" class="
-                    text-xl
-                    font-bold
-                    text-gray-100
-                    md:text-2xl
-                    hover:text-indigo-400
-                  ">Exit
-        </router-link>
-        <router-view/>
+            
+          ">{{gate}} Gate
+      </p>
+
         <!-- <h1 style="color:whitesmoke; font-weight: bold; font-size: large;">FacePlareRec</h1> -->
         <!-- Mobile menu button -->
         <div @click="toggleNav" class="flex md:hidden">
@@ -59,6 +51,10 @@
 </template>
 
 <script setup>
+
+const props = defineProps({
+  gate : String
+})
 
 </script>
 

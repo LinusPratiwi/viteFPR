@@ -11,7 +11,7 @@ import { ref, watchEffect, onMounted, getCurrentInstance } from 'vue'
 const canvas = ref < HTMLCanvasElement | null > (null);
 
 const props = defineProps({
-    extId: String,
+    image: String,
     bbox: Array
 })
 
@@ -25,21 +25,21 @@ onMounted(() => {
     console.log("pppp==> ", _bbox.value)
     // img.classList.add("rounded-lg")
     watchEffect(async () => {
-          _bbox.value = props.bbox
-        let data = _bbox.value
+        //   _bbox.value = props.bbox
+        // let data = _bbox.value
 
-        if (data !== null) {
-            // instance?.proxy?.$forceUpdate();
+        // if (data !== null) {
+        //     // instance?.proxy?.$forceUpdate();
            
-            console.log("watch => ", data)
-            // context.drawImage(a, data[0] , data[1] , data[2], data[3] )
-            context.clearRect(0,0,300,150)
-            context.beginPath()
-            context.rect(`${data[0]}`, `${data[1]}`, `${data[2]}`, `${data[3]}`)
-            context.lineWidth = 3;
-            context.strokeStyle = 'green';
-            context.stroke();
-        } 
+        //     console.log("watch => ", data)
+           
+        //     context.clearRect(0,0,300,150)
+        //     context.beginPath()
+        //     context.rect(`${data[0]}`, `${data[1]}`, `${data[2]}`, `${data[3]}`)
+        //     context.lineWidth = 3;
+        //     context.strokeStyle = 'green';
+        //     context.stroke();
+        // } 
     }
       )
 })

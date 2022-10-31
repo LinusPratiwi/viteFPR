@@ -4,15 +4,13 @@
             <div class="md:flex md:justify-between md:items-center">
                 <Switch v-model="enabled" @click="cameraStatus" :class="enabled ? 'bg-teal-700' : 'bg-gray-200'"
                     class="relative inline-flex h-[38px] w-[74px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-            
                     <span class="sr-only">Use setting</span>
                     <span aria-hidden="true" :class="enabled ? 'translate-x-9' : 'translate-x-0'"
                         class="pointer-events-none inline-block h-[34px] w-[34px] transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" />
-                    <!-- click -->
                 </Switch>
-            
                 <!-- end toggle -->
-                <button class="hover:bg-green-700 text-red-600 underline font-bold py-2 px-4 rounded hover:text-white">
+
+                <button @click="startRecognition" class="hover:bg-green-600 active:bg-green-700 text-red-600 underline font-bold py-2 px-4 rounded hover:text-white">
                     Start Recognition
                 </button>
             </div>
@@ -26,7 +24,6 @@
                 <div  >
                     <video :srcObject="camera" ref="camera" class="w-full rounded-lg border border-gray-200 shadow-md" autoplay ></video>
                     <!-- <canvas ref="canvas" style=" position:absolute; height:480px;width:640px"></canvas> -->
-                   
                 </div>
 
             </div>
@@ -44,14 +41,21 @@ import * as tf from '@tensorflow/tfjs'
 
 const enabled = ref(false) 
 const camera = ref(null )   
-// const canvas = ref<HTMLCanvasElement | null>(null); 
 const picture = ref('')
-let context2
-let bbox
+let face_bbox
 let pict
+let isFaceIndexed
+let face_Id
+let face_conf
+let plate_conf
+let plate_text
+let plate_bbox
+
+const props = defineProps({
+    Gate: String
+})
 
 const emit = defineEmits(["setExtId"])
-
 
 const constraints = (window.constraints = {
     audio: false,
@@ -66,61 +70,96 @@ const startCamera =async () => {
     }
 }
 
-const stopCamera = async () => {
-    let tracks =  document.querySelector('video').srcObject.getTracks()
-    const vid = document.querySelector('video')
-    const context = document.querySelector('canvas').getContext('2d')
-    context2 = context
-    
-    // context.drawImage(vid, 0, 0, 213, 160)
-    context.drawImage(vid, 0, 0, 213, 160)
 
-    pict = document.querySelector('canvas').toDataURL('image/jpg')
+
+const startRecognition= async ()=>{
+    const vid = document.querySelector('video')
+   
+    const context = document.getElementById('canv_app').getContext('2d')
+    const context_fbbox = context
+    const context_pbbox = context
+    context.drawImage(vid, 0, 0, 213, 160)
+    
+    pict = document.getElementById('canv_app').toDataURL('image/jpg')
     console.log(pict)
 
     let param = {
             base64: pict,
     }
 
-    const face =await fetch("https://pxtah2gv1i.execute-api.ap-southeast-1.amazonaws.com/add",{
+    // face rekognition, return : bbox,extimgid,indexstatus,faceconf
+    const face = await fetch("https://j93dglvqc2.execute-api.ap-southeast-1.amazonaws.com/faceRek",{
         method: "post",
         headers: {
             "Content-Type":"application/json"
         },
-        body: JSON.stringify(param)
+            body: JSON.stringify(param)
     })
 
-    const plate = await fetch("https://k7loituhdl.execute-api.ap-southeast-1.amazonaws.com/test", {
-        method: "post",
+     const plate = await fetch("https://k7loituhdl.execute-api.ap-southeast-1.amazonaws.com/test", {
+        method: "post" ,
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(param)
+         body: JSON.stringify(param)
     })
 
+    
     const face_res =await face.json()
     const plate_res = await plate.json()
+
+    
+    face_Id = face_res[1]
+    face_bbox = face_res[2]
+    isFaceIndexed = face_res[3]
+    face_conf = face_res[4]
+    
+
+    plate_conf = plate_res[1]
+    plate_text = plate_res[2]
+    plate_bbox = plate_res[3]
+
+    console.log("face all", face_res)
+    // console.log("face conf", face_res[""])
     let date = Date.now()
     date = new Date(date)
 
-    const db_param = {
-            face_extId: face_res[2],
-            plate_extId : plate_res[1],
-            plate : plate_res[2],
-            _timestamp :date
-    }
-
-    const addtoDB = await fetch("https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/addtoDB", {
+    const searchFace = await fetch("https://j93dglvqc2.execute-api.ap-southeast-1.amazonaws.com/searchFace", {
         method: "post",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": "AWS4-HMAC-SHA256 Credential=AKIASAGNXVQIH3TPNWMD/20221021/us-east-1/execute-api/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=155523b838bb4234b4d3da5c55f27790dc81926815f511296665f8e44a1d74f2",
+            "X-Amz-Date": "20221021T012622Z",
+            "X-Amz-Content-Sha256": "beaead3198f7da1e70d03ab969765e0821b24fc913697e929e726aeaebf0eba3",
+
         },
-        body: JSON.stringify(db_param)
+        body: JSON.stringify({
+            "key": face_Id
+        })
+    })
+
+    const srcface = await searchFace.json()
+
+    // console.log("search face", srcface[1])
+
+    const db_param = {
+        face_Id: face_Id,
+        plate_extId : plate_res[1],
+        plate : plate_res[2],
+        _timestamp :date
+    }
+ 
+    const addtoDB = await fetch("https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/addtoDB", {
+        method: "post",
+            headers: {
+                "Content-Type": "application/json"
+       },
+            body:JSON.stringify(db_param) 
     })
 
 
     const db_res = addtoDB.json()
-    console.log("s",db_res)
+    // console.log("s",db_res)
    
     const searchPlate = await fetch("https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/searchPlate", {
         method: "post",
@@ -130,20 +169,36 @@ const stopCamera = async () => {
         body: JSON.stringify(plate_res[1])
     })
 
-    console.log("PLATE ->", searchPlate)
-    const [x, y, width, height] = [face_res[1].Left, face_res[1].Top, face_res[1].Width, face_res[1].Height]; 
-     bbox = [`${x * 300}`, `${y * 150}`, `${width * 300}`, `${height * 150}`]
-    console.log("plate det : ", plate_res)
-    
-    // const canv_app = document.getElementById('canv_app').getContext('2d')
-   
-    // canv_app.drawImage(vid,0,0,213,160)
-     console.log("%%%%", (y * 480) + 10, (x * 640) + (width * 640) + 230, (y * 480) + (height * 480) + 10, (x * 640) +70)
-    document.getElementById('canv_app').style.position="absolute"
-      
+    // console.log("PLATE ->", searchPlate)
+    const [x, y, width, height] = [face_bbox.Left, face_bbox.Top, face_bbox.Width, face_bbox.Height]; 
+    face_bbox = [`${x * 300}`, `${y * 150}`, `${width * 300}`, `${height * 150}`]
+    context_fbbox.strokeStyle = 'green'
+    context_fbbox.lineWidth = 3
+    context_fbbox.beginPath()
+    context_fbbox.rect(face_bbox[0],face_bbox[1],face_bbox[2],face_bbox[3])
+    context_fbbox.stroke()
 
+    const [px, py, pwidth, pheight] = [plate_bbox.Left, plate_bbox.Top, plate_bbox.Width, plate_bbox.Height]; 
+    plate_bbox = [`${px * 300}`, `${py * 150}`, `${pwidth * 300}`, `${pheight * 150}`]
+    context_pbbox.strokeStyle = 'green'
+    context_pbbox.lineWidth = 3
+    context_pbbox.beginPath()
+    context_pbbox.rect(plate_bbox[0], plate_bbox[1], plate_bbox[2], plate_bbox[3])
+    context_pbbox.stroke()
+    console.log("plate det : ", plate_res)
+
+    // console.log("%%%%", (y * 480) + 10, (x * 640) + (width * 640) + 230, (y * 480) + (height * 480) + 10, (x * 640) +70)
+    // document.getElementById('canv_app').style.position="absolute"
+    emit('setExtId', [srcface[1], face_bbox,face_Id, isFaceIndexed,face_conf,plate_conf,plate_text,plate_bbox])
+
+    console.log("tecs -> ", typeof(plate_res[2]))
+}
+
+const stopCamera = async () => {
+    let tracks =  document.querySelector('video').srcObject.getTracks()
+    
    tracks.forEach(element => {
-        // element.stop()
+        element.stop()
    });
  
    
@@ -155,26 +210,19 @@ const cameraStatus = ()=>{
         enabled.value === false
         stopCamera()
         console.log("stop", enabled.value)
+       
     }
     if(enabled.value === false){
         enabled.value === true
         startCamera()
         
         console.log('start',enabled.value)
+
     }
+   
 }
 
 
-
-onMounted(() => {
-	// picture.value = localStorage.getItem('picture') || ''
-    watch(enabled, (newVal) => {
-        // localStorage.setItem('picture',newVal)
-        emit('setExtId', [pict, bbox, enabled])
-
-
-    })
-})
 
 const runSSD =  async() => {
     // 3. TODO - Load network 
