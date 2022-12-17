@@ -1,5 +1,5 @@
 <template>
-    <div class="col-span-2 row-span-2 ">
+    <div class="col-span-2 row-span-3 ">
         <div style="height:100%" class=" w-full bg-white rounded-lg border shadow-md dark:bg-gray-800 dark:border-gray-700 ">
             <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 bg-gray-50 rounded-t-lg border-b border-gray-200 dark:border-gray-700 dark:text-gray-400 dark:bg-gray-800"
                 id="defaultTab" data-tabs-toggle="#defaultTabContent" role="tablist">
@@ -10,9 +10,10 @@
                 </li>
             </ul>
 
-            <!-- ENTRY GATE -->
+            
             <div class=""> 
                 <div id="defaultTabContent" class="flex justify-evenly relative">
+                    <!-- ENTRY GATE -->
                     <div v-if="gate === 'entry'" class="w-full absolute left-1/2 top-1/2 transform -translate-x-1/2 bg-white rounded-lg md:p-4 dark:bg-gray-800 bg-white rounded-lg md:p-4 dark:bg-gray-800"  >
                     <canvas ref="canvas" id="canv_app" class="-ml-8 mt-10 transform translate-x-1/2 "></canvas>
                         <div id="status" class="flex justify-center">
@@ -24,9 +25,7 @@
                             <div v-else-if="isFaceIndexed === 'newface'">
                                 <p class="mt-5 text-xl font-bold tracking-tight text-green-600 dark:text-white text-center">New face information stored </p>
                                 <p>{{face_extId}}</p>
-                            </div>
-                           
-                            
+                            </div>   
                         </div>
                         <hr class="my-8 h-px bg-gray-200 border-0 dark:bg-gray-700" />
                         <div class="flex justify-center">
@@ -35,7 +34,7 @@
                                 <p class="text-center">{{plate_text}}</p>
                             </div>
                         
-                            <p v-else class=" text-xl font-bold tracking-tight text-red-600 dark:text-white text-center">No Plate information identified</p>
+                            <p v-else class=" text-xl font-bold tracking-tight text-red-600 dark:text-white text-center">No Plate information identified {{plate_conf}} </p>
 
                         </div>
                     </div>
@@ -97,7 +96,7 @@
                                 </tr>
                                  <tr>
                                     <td class="pl-3">Plate Status</td>
-                                    <td class="rounded-lg italic border border-slate-300 pl-3 " :class=" plate_conf >50 ? 'border-green-600' : 'border-red-600' " ><span v-if="plate_text">{{plate_text}} (OK)</span>
+                                    <td class="rounded-lg italic border border-slate-300 pl-3 " :class=" plate_conf > 50 ? 'border-green-600' : 'border-red-600' " ><span v-if="plate_text">{{plate_text}} (OK)</span>
                                     <span v-else>plate information is invalid</span></td>
                                 </tr>
                                 <tr>
@@ -128,7 +127,7 @@
 
 <script setup>
 import Picture from './Picture.vue';
-import {onMounted,ref} from 'vue'
+import {ref} from 'vue'
 
 const props = defineProps({
     image:String,
@@ -141,8 +140,6 @@ const props = defineProps({
     plate_conf : Number
 })
 
-let date = Date.now()
-date = new Date(date)
 
 </script>
 

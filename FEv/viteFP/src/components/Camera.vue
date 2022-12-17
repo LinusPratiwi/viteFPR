@@ -10,7 +10,7 @@
                 </Switch>
                 <!-- end toggle -->
 
-                <button @click="startRecognition" class="hover:bg-green-600 active:bg-green-700 text-red-600 underline font-bold py-2 px-4 rounded hover:text-white">
+                <button @click="startRecognition" class="hover:bg-blue-700 bg-blue-500 text-white underline font-bold py-2 px-4 rounded ">
                     Start Recognition
                 </button>
             </div>
@@ -18,7 +18,6 @@
             <!-- camera -->
             <div class="camera-box md:px-4 md:py-4" >
                 <!-- toggle -->
-                
                 
                 <!-- camera -->
                 <div  >
@@ -39,6 +38,7 @@ import { ref,onMounted,watch  } from 'vue'
 import { Switch, SwitchLabel,SwitchGroup } from '@headlessui/vue'
 import * as tf from '@tensorflow/tfjs'
 
+
 const enabled = ref(false) 
 const camera = ref(null )   
 const picture = ref('')
@@ -50,6 +50,8 @@ let face_conf
 let plate_conf
 let plate_text
 let plate_bbox
+let searchedFace
+let searchedPlate
 
 const props = defineProps({
     Gate: String
@@ -70,16 +72,13 @@ const startCamera =async () => {
     }
 }
 
-
-
 const startRecognition= async ()=>{
     const vid = document.querySelector('video')
-   
     const context = document.getElementById('canv_app').getContext('2d')
     const context_fbbox = context
     const context_pbbox = context
     context.drawImage(vid, 0, 0, 213, 160)
-    
+       
     pict = document.getElementById('canv_app').toDataURL('image/jpg')
     console.log(pict)
 
@@ -88,110 +87,139 @@ const startRecognition= async ()=>{
     }
 
     // face rekognition, return : bbox,extimgid,indexstatus,faceconf
-    const face = await fetch("https://j93dglvqc2.execute-api.ap-southeast-1.amazonaws.com/faceRek",{
+    const face = await fetch("https://j93dglvqc2.execute-api.ap-southeast-1.amazonaws.com/face/recognition",{
         method: "post",
         headers: {
-            "Content-Type":"application/json"
+            "Content-Type":"application/json",
+            "Authorization": "AWS4-HMAC-SHA256 Credential=AKIASAGNXVQIH3TPNWMD/20221021/us-east-1/execute-api/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=155523b838bb4234b4d3da5c55f27790dc81926815f511296665f8e44a1d74f2",
+            "X-Amz-Date": "20221021T012622Z",
+            "X-Amz-Content-Sha256": "beaead3198f7da1e70d03ab969765e0821b24fc913697e929e726aeaebf0eba3",
         },
-            body: JSON.stringify(param)
+        body: JSON.stringify(param),
+        
     })
 
-     const plate = await fetch("https://k7loituhdl.execute-api.ap-southeast-1.amazonaws.com/test", {
+    const newface = await fetch("https://j93dglvqc2.execute-api.ap-southeast-1.amazonaws.com/face/index", {
+        method: "post",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(param)
+    })
+
+    const plate = await fetch("	https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/plate/read", {
         method: "post" ,
         headers: {
             "Content-Type": "application/json"
         },
-         body: JSON.stringify(param)
+        body: JSON.stringify(param)
     })
 
-    
-    const face_res =await face.json()
-    const plate_res = await plate.json()
+    var face_res = await face.json()
+    var plate_res = await plate.json()
+    console.log("plattt==?", plate_res)
+    console.log("hasil ==??", face_res)
 
-    
-    face_Id = face_res[1]
-    face_bbox = face_res[2]
-    isFaceIndexed = face_res[3]
-    face_conf = face_res[4]
-    
-
-    plate_conf = plate_res[1]
-    plate_text = plate_res[2]
-    plate_bbox = plate_res[3]
-
-    console.log("face all", face_res)
-    // console.log("face conf", face_res[""])
-    let date = Date.now()
-    date = new Date(date)
-
-    const searchFace = await fetch("https://j93dglvqc2.execute-api.ap-southeast-1.amazonaws.com/searchFace", {
-        method: "post",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "AWS4-HMAC-SHA256 Credential=AKIASAGNXVQIH3TPNWMD/20221021/us-east-1/execute-api/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=155523b838bb4234b4d3da5c55f27790dc81926815f511296665f8e44a1d74f2",
-            "X-Amz-Date": "20221021T012622Z",
-            "X-Amz-Content-Sha256": "beaead3198f7da1e70d03ab969765e0821b24fc913697e929e726aeaebf0eba3",
-
-        },
-        body: JSON.stringify({
-            "key": face_Id
-        })
-    })
-
-    const srcface = await searchFace.json()
-
-    // console.log("search face", srcface[1])
-
-    const db_param = {
-        face_Id: face_Id,
-        plate_extId : plate_res[1],
-        plate : plate_res[2],
-        _timestamp :date
+    let param_plate = {
+        plate_query: plate_res[1].TextDetections[0].DetectedText
     }
- 
-    const addtoDB = await fetch("https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/addtoDB", {
-        method: "post",
-            headers: {
-                "Content-Type": "application/json"
-       },
-            body:JSON.stringify(db_param) 
-    })
-
-
-    const db_res = addtoDB.json()
-    // console.log("s",db_res)
-   
-    const searchPlate = await fetch("https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/searchPlate", {
+    console.log("param plate ?", param_plate)
+    
+    const searchPlate = await fetch("	https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/plate/search", {
         method: "post",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(plate_res[1])
+        body: JSON.stringify(param_plate)
     })
 
-    // console.log("PLATE ->", searchPlate)
-    const [x, y, width, height] = [face_bbox.Left, face_bbox.Top, face_bbox.Width, face_bbox.Height]; 
+    const srcplate = await searchPlate.json()
+    const searchedPlate = srcplate[1]
+    console.log("searched plate?? ",srcplate)
+    console.log("searched pl}",searchedPlate)
+    if (face_res[1].FaceMatches.length === 0) {
+        const newfaceres = await newface.json()
+        console.log("new face??", newfaceres)
+        face_Id = newfaceres[1].FaceRecords[0].Face.ExternalImageId
+        face_bbox = newfaceres[1].FaceRecords[0].Face.BoundingBox
+        isFaceIndexed = "newface"
+        face_conf = newfaceres[1].FaceRecords[0].Face.Confidence
+        searchedFace = null
+    }
+    else {
+        face_Id = face_res[1].FaceMatches[0].Face.ExternalImageId
+        face_bbox = face_res[1].SearchedFaceBoundingBox
+        isFaceIndexed = face_res[2]
+        face_conf = face_res[1].SearchedFaceConfidence
+        const searchFace = await fetch("https://j93dglvqc2.execute-api.ap-southeast-1.amazonaws.com/face/search", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "AWS4-HMAC-SHA256 Credential=AKIASAGNXVQIH3TPNWMD/20221021/us-east-1/execute-api/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=155523b838bb4234b4d3da5c55f27790dc81926815f511296665f8e44a1d74f2",
+                "X-Amz-Date": "20221021T012622Z",
+                "X-Amz-Content-Sha256": "beaead3198f7da1e70d03ab969765e0821b24fc913697e929e726aeaebf0eba3",
+
+            },
+            body: JSON.stringify({
+                "key": face_Id
+            })
+        })
+
+        const srcface = await searchFace.json()
+        searchedFace = srcface[1]
+        console.log("search face", srcface)
+
+    }
+
+    if(plate_res[1].length=== 0){
+        console.log("no plat")
+    }
+    if(searchedPlate.Count === 0){
+        plate_conf = plate_res[1].TextDetections[0].Confidence
+        plate_text = plate_res[1].TextDetections[0].DetectedText
+        plate_bbox = plate_res[1].TextDetections[0].Geometry.BoundingBox
+        let date = Date.now()
+        date = new Date(date)
+
+        const db_param = {
+            s3_key: face_Id,
+            plate_text: plate_text,
+            p_timestamp: date
+        }
+        
+        const addtoDB = await fetch("https://drqwjtpeyl.execute-api.ap-southeast-1.amazonaws.com/plate/add", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(db_param)
+        })
+
+        const db_res = addtoDB.json()
+        console.log("dbdbdb ?", db_res)
+    }
+
+    
+
+    const [x, y, width, height] = [face_bbox.Left, face_bbox.Top, face_bbox.Width, face_bbox.Height];
     face_bbox = [`${x * 300}`, `${y * 150}`, `${width * 300}`, `${height * 150}`]
     context_fbbox.strokeStyle = 'green'
     context_fbbox.lineWidth = 3
     context_fbbox.beginPath()
-    context_fbbox.rect(face_bbox[0],face_bbox[1],face_bbox[2],face_bbox[3])
+    context_fbbox.rect(face_bbox[0], face_bbox[1], face_bbox[2], face_bbox[3])
     context_fbbox.stroke()
 
-    const [px, py, pwidth, pheight] = [plate_bbox.Left, plate_bbox.Top, plate_bbox.Width, plate_bbox.Height]; 
+    const [px, py, pwidth, pheight] = [plate_bbox.Left, plate_bbox.Top, plate_bbox.Width, plate_bbox.Height];
     plate_bbox = [`${px * 300}`, `${py * 150}`, `${pwidth * 300}`, `${pheight * 150}`]
     context_pbbox.strokeStyle = 'green'
     context_pbbox.lineWidth = 3
     context_pbbox.beginPath()
     context_pbbox.rect(plate_bbox[0], plate_bbox[1], plate_bbox[2], plate_bbox[3])
     context_pbbox.stroke()
-    console.log("plate det : ", plate_res)
 
-    // console.log("%%%%", (y * 480) + 10, (x * 640) + (width * 640) + 230, (y * 480) + (height * 480) + 10, (x * 640) +70)
-    // document.getElementById('canv_app').style.position="absolute"
-    emit('setExtId', [srcface[1], face_bbox,face_Id, isFaceIndexed,face_conf,plate_conf,plate_text,plate_bbox])
 
-    console.log("tecs -> ", typeof(plate_res[2]))
+    emit('setExtId', [searchedFace, face_bbox,face_Id, isFaceIndexed,face_conf,plate_conf,plate_text,plate_bbox])
+
 }
 
 const stopCamera = async () => {
@@ -252,31 +280,6 @@ const runSSD =  async() => {
     tf.dispose(obj)
     // return _plate_bbox
 }
-
-const drawRect = (boxes, scores, threshold, imgWidth, imgHeight, ctx) => {
-
-    for (let i = 0; i <= boxes.length; i++) {
-        if (boxes[i] && scores[i] > threshold) {
-            // Extract variables
-            const [y, x, height, width] = boxes[i]
-         
-
-            // Set styling
-            ctx.strokeStyle = 'red'
-            ctx.lineWidth = 3
-
-            // DRAW!!
-            ctx.clearRect(0, 0, 300, 150)
-            ctx.beginPath()
-            ctx.rect(x * imgWidth, y * imgHeight, width * imgWidth / 2, height * imgHeight / 2);
-            ctx.stroke()
-            // ctx.beginPath()
-            // ctx.rect(0,0,40,40)
-            // ctx.strokeStyle='green'
-        }
-    }
-}
-
 
 </script>
 

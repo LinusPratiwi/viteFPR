@@ -1,6 +1,6 @@
 <template>
     <Header gate="Exit" />
-    <div class="grid grid-rows-2 grid-cols-5 gap-4 p-4">
+    <div class="grid grid-rows-3 grid-cols-5 gap-4 p-4">
         <Camera @setExtId="(data)=>{
           image=data[0]
           bbox = data[1]
@@ -13,7 +13,7 @@
         }">
         </Camera>
 
-        <Card :image="image" :bbox="bbox" gate="exit" :face_extId="face_extId" :isFaceIndexed="isFaceIndexed"  :face_conf="face_conf" :plate_text="plate_text" :plate_conf = "plate_conf" /> 
+        <Card :image="image" :bbox="bbox" gate="exit" :face_extId="face_extId" :isFaceIndexed="isFaceIndexed"  :face_conf="face_conf" :plate_text="plate_text" :plate_conf = "plate_conf" ></Card> 
     </div>
     <canvas ref="canvas" id="canv_app" style=" height:480px;"></canvas>
 </template>

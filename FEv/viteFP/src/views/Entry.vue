@@ -2,14 +2,13 @@
     
     <Header gate="Entry" />
     <div class="grid grid-rows-2 grid-cols-5 gap-4 p-4">
-        <Camera @setExtId="(data)=>{
-          
-          
+         <Camera @setExtId="(data)=>{
           face_extId = data[2]
           isFaceIndexed = data[3]
-          plate_conf = data[5]  
+          plate_conf = data[5]
           plate_text = data[6]
-        }" ></Camera>
+        }">
+        </Camera>
 
         <Card   gate="entry" :face_extId="face_extId" :isFaceIndexed="isFaceIndexed"
            :plate_text="plate_text" :plate_conf="plate_conf" />
